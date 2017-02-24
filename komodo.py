@@ -44,12 +44,11 @@ def snaplist(fname):
 
 @komodo.command()
 @click.argument('direc', type=click.Path())
-@click.option('--exec_only', type=click.BOOL, default=False,
-              help="Only copy executable.")
+@click.option('--exec_only', is_flag=True, help="Only copy executable.")
 def newrun(direc, exec_only):
     flist = ('../bin/meraxes', '../input/input.par', '../input/snaplist.txt')
     if exec_only:
-        flist = flist[0]
+        flist = [flist[0],]
     if all(Path(f).exists() for f in flist):
         meraxes_dir = Path('.')
     else:
