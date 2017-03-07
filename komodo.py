@@ -43,6 +43,15 @@ def snaplist(fname):
     tab.pprint(max_lines=-1, max_width=-1)
 
 @komodo.command()
+@click.argument('fname', type=click.STRING)
+def gitref(fname):
+    ref, diff = meraxes.io.read_git_info(fname)
+    print(ref.decode('utf-8'))
+    if diff:
+        print('===')
+        print(diff.decode('utf-8'))
+
+@komodo.command()
 @click.argument('direc', type=click.Path())
 @click.option('--exec_only', is_flag=True, help="Only copy executable.")
 def newrun(direc, exec_only):
@@ -61,6 +70,41 @@ def newrun(direc, exec_only):
     for f in (meraxes_dir/Path(f) for f in flist):
         shutil.copy(str(f), str(direc/f.name))
 
+@komodo.command()
+@click.argument('z', nargs=-1, type=click.FLOAT)
+@click.option('--snaplist', is_flag=True, help="Create meraxes snaplist"
+              " compatible output")
+@click.option('--alist', type=click.Path(exists=True),
+              help="Meraxes compatible expansion factor list")
+def select_snaps(z, snaplist=False, alist=None):
+    if alist is None:
+        alist = str(Path(__file__).parent / Path('data/tiamat_alist.txt'))
+
+    exp_factor = np.loadtxt(alist)
+
+    if not hasattr(z, '__iter__'):
+        z = [z]
+
+    z = np.array(z, float)
+    z_avail = 1.0 / exp_factor - 1.0
+
+    nearest_snaps = np.ones(z.size, int) * -1
+    nearest_zs = np.ones(z.size) * -1
+    for ii, v in enumerate(z):
+        nearest_snaps[ii] = np.argmin(np.abs(z_avail - v))
+        nearest_zs[ii] = z_avail[nearest_snaps[ii]]
+
+    if not snaplist:
+        print()
+        print("requested    nearest    snapshot")
+        print("---------    -------    --------")
+        for line in zip(z, nearest_zs, nearest_snaps):
+            print("    {:>5.2f}      {:>5.2f}         {:>3d}".format(*line))
+    else:
+        line = " ".join(["{:d}".format(snap) for snap in nearest_snaps])
+        print(line)
+
+    return nearest_snaps, nearest_zs
 
 if __name__ == "__main__":
     komodo()
