@@ -21,11 +21,13 @@ def komodo():
 
 @komodo.command()
 @click.argument('fname', type=click.STRING)
-def xHI_evo(fname):
+@click.option('--weight', '-w', type=click.Choice(['volume', 'mass']),
+              default='volume')
+def xHI_evo(fname, weight):
     log.setLevel('WARNING')
     meraxes.io.set_little_h(fname)
     snaplist, zlist, lbtime = meraxes.io.read_snaplist(fname)
-    xhi = meraxes.io.read_global_xH(fname, snaplist, quiet=True)
+    xhi = meraxes.io.read_global_xH(fname, snaplist, weight=weight, quiet=True)
     tab = Table((snaplist, zlist, lbtime, xhi),
                 names=('snapshot', 'redshift', 'lookback_time', 'xHI'))
     tab['lookback_time'].unit = U.Myr
@@ -95,11 +97,9 @@ def select_snaps(z, snaplist=False, alist=None):
         nearest_zs[ii] = z_avail[nearest_snaps[ii]]
 
     if not snaplist:
-        print()
-        print("requested    nearest    snapshot")
-        print("---------    -------    --------")
-        for line in zip(z, nearest_zs, nearest_snaps):
-            print("    {:>5.2f}      {:>5.2f}         {:>3d}".format(*line))
+        tab = Table((z, nearest_zs, nearest_snaps),
+                    names=('requested', 'nearest', 'snapshot'))
+        tab.pprint(max_lines=-1, max_width=-1)
     else:
         line = " ".join(["{:d}".format(snap) for snap in nearest_snaps])
         print(line)
