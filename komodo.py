@@ -10,6 +10,7 @@ from astropy import units as U, log
 from pathlib import Path
 import os
 import shutil
+import h5py as h5
 
 __author__ = "Simon Mutch"
 __date__ = "2015-10-09"
@@ -105,6 +106,41 @@ def select_snaps(z, snaplist=False, alist=None):
         print(line)
 
     return nearest_snaps, nearest_zs
+
+@komodo.command()
+@click.argument('fname', type=click.Path(exists=True))
+def galaxy_props(fname):
+
+    def _get_gal_dtype(k, v):
+        if isinstance(v, h5.Group):
+            try:
+                return v['Galaxies'].dtype
+            except KeyError:
+                pass
+
+    def _get_format_str(dtype, name):
+        dt = dtype[name]
+        shape = dt.shape
+        if len(shape) > 0:
+            return ' '.join((dt.subdtype[0].str, str(shape)))
+        else:
+            return dt.str
+
+    # find a galaxy structure, get the dtype and also grab the h conversions
+    with h5.File(fname) as fd:
+        gal_dtype = fd.visititems(_get_gal_dtype)
+        h_conv = dict(fd['HubbleConversions'].attrs.items())
+
+    # grab the units too
+    units = meraxes.read_units(fname)
+
+    # print a table
+    props = gal_dtype.names
+    formats = [_get_format_str(gal_dtype, prop) for prop in props]
+    tab = Table((props, [h_conv[p] for p in props], [units[p] for p in props], formats),
+                names=('property', 'h conversion', 'unit', 'dtype'))
+    tab.pprint(max_lines=-1, max_width=-1)
+
 
 if __name__ == "__main__":
     komodo()

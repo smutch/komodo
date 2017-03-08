@@ -10,6 +10,7 @@ requirements = [
     'Click>=6.0',
     'numpy>=1.11.2',
     'astropy>=1.1.1',
+    'h5py>=2.6.0'
 ]
 
 setup(
