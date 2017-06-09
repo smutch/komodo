@@ -2,15 +2,7 @@
 
 """Command line utilities for simple Meraxes / 21cmFAST based tasks."""
 
-import numpy as np
-from dragons import meraxes
 import click
-from astropy.table import Table
-from astropy import units as U, log
-from pathlib import Path
-import os
-import shutil
-import h5py as h5
 
 __author__ = "Simon Mutch"
 __date__ = "2015-10-09"
@@ -25,6 +17,10 @@ def komodo():
 @click.option('--weight', '-w', type=click.Choice(['volume', 'mass']),
               default='volume')
 def xHI_evo(fname, weight):
+    from dragons import meraxes
+    from astropy.table import Table
+    from astropy import units as U, log
+
     log.setLevel('WARNING')
     meraxes.io.set_little_h(fname)
     snaplist, zlist, lbtime = meraxes.io.read_snaplist(fname)
@@ -37,6 +33,10 @@ def xHI_evo(fname, weight):
 @komodo.command()
 @click.argument('fname', type=click.STRING)
 def snaplist(fname):
+    from dragons import meraxes
+    from astropy.table import Table
+    from astropy import units as U, log
+
     log.setLevel('WARNING')
     meraxes.io.set_little_h(fname)
     snaplist, zlist, lbtime = meraxes.io.read_snaplist(fname)
@@ -48,6 +48,8 @@ def snaplist(fname):
 @komodo.command()
 @click.argument('fname', type=click.STRING)
 def gitref(fname):
+    from dragons import meraxes
+
     ref, diff = meraxes.io.read_git_info(fname)
     print(ref.decode('utf-8'))
     if diff:
@@ -58,6 +60,10 @@ def gitref(fname):
 @click.argument('direc', type=click.Path())
 @click.option('--exec_only', is_flag=True, help="Only copy executable.")
 def newrun(direc, exec_only):
+    from pathlib import Path
+    import os
+    import shutil
+
     flist = ('../bin/meraxes', '../input/input.par', '../input/snaplist.txt')
     if exec_only:
         flist = [flist[0],]
@@ -80,6 +86,10 @@ def newrun(direc, exec_only):
 @click.option('--alist', type=click.Path(exists=True),
               help="Meraxes compatible expansion factor list")
 def select_snaps(z, snaplist=False, alist=None):
+    import numpy as np
+    from astropy.table import Table
+    from pathlib import Path
+
     if alist is None:
         alist = str(Path(__file__).parent / Path('data/tiamat_alist.txt'))
 
@@ -110,6 +120,9 @@ def select_snaps(z, snaplist=False, alist=None):
 @komodo.command()
 @click.argument('fname', type=click.Path(exists=True))
 def galaxy_props(fname):
+    from dragons import meraxes
+    from astropy.table import Table
+    import h5py as h5
 
     def _get_gal_dtype(k, v):
         if isinstance(v, h5.Group):
